@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>楽曲診断 — ファーストプレイリスト</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500;700&family=IM+Fell+English:ital@1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Old+Mincho:wght@300;400;500&family=Klee+One&family=IM+Fell+English:ital@1&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -87,17 +87,20 @@ body {
 }
 
 .header-logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic; font-weight: 300;
-  font-size: clamp(36px, 10vw, 56px);
+  font-family: 'Zen Old Mincho', serif;
+  font-style: normal; font-weight: 300;
+  font-size: clamp(32px, 9vw, 48px);
   color: var(--text);
-  letter-spacing: 2px; line-height: 1.1;
+  letter-spacing: 14px; line-height: 1.15;
   margin-bottom: 6px;
+  opacity: 0.88;
 }
 .header-sub-ja {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
   font-size: clamp(11px, 2.5vw, 13px);
   font-weight: 300; color: var(--text-ll);
-  letter-spacing: 6px; text-transform: uppercase;
+  letter-spacing: 8px; text-transform: uppercase;
 }
 .header-divider {
   width: 80px; height: 1px;
@@ -118,9 +121,10 @@ body {
 }
 .intro-catch {
   text-align: center;
+  font-family: 'Klee One', 'Noto Sans JP', sans-serif;
   font-size: clamp(13px, 3.5vw, 15px);
-  font-weight: 300; color: var(--text-l);
-  line-height: 2; margin-bottom: 32px;
+  font-weight: 400; color: var(--text-l);
+  line-height: 2.2; margin-bottom: 32px;
 }
 .intro-catch strong {
   color: var(--text); font-weight: 500;
@@ -242,12 +246,13 @@ body {
   display: block; line-height: 1; position: relative; z-index: 1;
 }
 .result-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 26px; font-weight: 400; color: var(--text);
-  margin-bottom: 12px; letter-spacing: 2px; position: relative; z-index: 1;
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 24px; font-weight: 300; color: var(--text);
+  margin-bottom: 12px; letter-spacing: 8px; position: relative; z-index: 1;
 }
 .result-desc {
-  color: var(--text-l); font-size: 13px; font-weight: 300; line-height: 1.95;
+  font-family: 'Klee One', 'Noto Sans JP', sans-serif;
+  color: var(--text-l); font-size: 13px; font-weight: 400; line-height: 2.1;
   margin-bottom: 16px; position: relative; z-index: 1;
 }
 .result-tags {
@@ -496,16 +501,15 @@ function shareToX() {
   if (!currentSong) return;
   const text = `【ファーストプレイリスト 楽曲診断】\nあなたにぴったりの曲は\n「${currentSong.title}」✨\nhttps://firstplaylist-boop.github.io/first-playlist-shindan/\n\n${currentSong.tags.map(t=>'#'+t).join(' ')}\n#ファーストプレイリスト #ストプレ`;
   const encoded = encodeURIComponent(text);
-  const appUrl = `twitter://post?message=${encoded}`;
   const webUrl = `https://twitter.com/intent/tweet?text=${encoded}`;
-  // Try app first, fall back to web after 1 second
-  const start = Date.now();
-  window.location = appUrl;
-  setTimeout(() => {
-    if (Date.now() - start < 1500) {
-      window.open(webUrl, '_blank');
-    }
-  }, 1000);
+  // Open web URL (works on all devices)
+  const win = window.open(webUrl, '_blank');
+  // Also try app scheme on mobile - if app is installed it will intercept
+  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+    setTimeout(() => { window.location = `twitter://post?message=${encoded}`; }, 100);
+    // Close the web tab if app opened
+    setTimeout(() => { if (win) win.close(); }, 1500);
+  }
 }
 function showResult(song) {
   currentSong = song;
