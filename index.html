@@ -495,7 +495,17 @@ function pick(optScores, btn) {
 function shareToX() {
   if (!currentSong) return;
   const text = `【ファーストプレイリスト 楽曲診断】\nあなたにぴったりの曲は\n「${currentSong.title}」✨\nhttps://firstplaylist-boop.github.io/first-playlist-shindan/\n\n${currentSong.tags.map(t=>'#'+t).join(' ')}\n#ファーストプレイリスト #ストプレ`;
-  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+  const encoded = encodeURIComponent(text);
+  const appUrl = `twitter://post?message=${encoded}`;
+  const webUrl = `https://twitter.com/intent/tweet?text=${encoded}`;
+  // Try app first, fall back to web after 1 second
+  const start = Date.now();
+  window.location = appUrl;
+  setTimeout(() => {
+    if (Date.now() - start < 1500) {
+      window.open(webUrl, '_blank');
+    }
+  }, 1000);
 }
 function showResult(song) {
   currentSong = song;
