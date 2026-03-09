@@ -494,7 +494,7 @@ function pick(optScores, btn) {
 }
 function shareToX() {
   if (!currentSong) return;
-  const text = `【ファーストプレイリスト 楽曲診断】\nあなたにぴったりの曲は\n「${currentSong.title}」✨\nhttps://firstplaylist-boop.github.io/first-playlist-shindan/\n\n${currentSong.tags.map(t=>'#'+t).join(' ')}\n#ファーストプレイリスト`;
+  const text = `【ファーストプレイリスト 楽曲診断】\nあなたにぴったりの曲は\n「${currentSong.title}」✨\nhttps://firstplaylist-boop.github.io/first-playlist-shindan/\n\n${currentSong.tags.map(t=>'#'+t).join(' ')}\n#ファーストプレイリスト #ストプレ`;
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
 }
 function showResult(song) {
