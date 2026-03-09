@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>楽曲診断 — ファーストプレイリスト</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500;700&family=IM+Fell+English:ital@1&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --pink:    #e8a8bc;
+  --pink-l:  #f5d6e0;
+  --blue:    #a8cce0;
+  --blue-l:  #d4eaf5;
+  --lavender:#c4aed4;
+  --lav-l:   #e8dcf0;
+  --mint:    #a8d8c8;
+  --text:    #4a4258;
+  --text-l:  #7a6e8a;
+  --text-ll: #a8a0b8;
+  --white:   #ffffff;
+  --off:     #fafafa;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  min-height: 100vh;
+  background: #fefefe;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--text);
+  overflow-x: hidden;
+  position: relative;
+}
+
+.bg-orbs {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  overflow: hidden;
+}
+.orb {
+  position: absolute; border-radius: 50%;
+  filter: blur(70px); opacity: 0.35;
+}
+.orb-1 { width: 500px; height: 500px; background: #f0d0e0; top: -10%; left: -10%; animation: drift1 18s ease-in-out infinite; }
+.orb-2 { width: 400px; height: 400px; background: #c8d8f0; top: 20%; right: -10%; animation: drift2 22s ease-in-out infinite; }
+.orb-3 { width: 350px; height: 350px; background: #d8c8ec; bottom: 10%; left: 20%; animation: drift3 16s ease-in-out infinite; }
+.orb-4 { width: 250px; height: 250px; background: #c0e8dc; bottom: -5%; right: 15%; animation: drift1 20s ease-in-out infinite reverse; }
+
+.feather {
+  position: fixed; pointer-events: none; z-index: 0;
+  font-size: 28px; opacity: 0.12;
+  animation: featherFloat 12s ease-in-out infinite;
+}
+.feather:nth-child(1) { top: 8%; left: 5%; animation-delay: 0s; }
+.feather:nth-child(2) { top: 30%; right: 6%; animation-delay: -4s; font-size: 20px; }
+.feather:nth-child(3) { bottom: 25%; left: 8%; animation-delay: -8s; font-size: 16px; }
+.feather:nth-child(4) { top: 60%; right: 10%; animation-delay: -2s; font-size: 22px; }
+
+.sparkle-field {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+}
+.sp {
+  position: absolute; border-radius: 50%;
+  background: white; box-shadow: 0 0 4px 1px rgba(200,180,230,0.6);
+  animation: sparkleAnim ease-in-out infinite;
+}
+
+.wrap {
+  max-width: 560px; margin: 0 auto;
+  padding: 56px 20px 72px;
+  position: relative; z-index: 1;
+}
+
+.header { text-align: center; margin-bottom: 48px; }
+.header-group {
+  font-size: 11px; letter-spacing: 5px;
+  color: var(--text-ll); font-weight: 300;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.header-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-weight: 300;
+  font-size: clamp(36px, 10vw, 56px);
+  color: var(--text);
+  letter-spacing: 2px; line-height: 1.1;
+  margin-bottom: 6px;
+}
+.header-sub-ja {
+  font-size: clamp(13px, 3vw, 16px);
+  font-weight: 300; color: var(--text-l);
+  letter-spacing: 4px;
+}
+.header-divider {
+  width: 80px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pink), transparent);
+  margin: 16px auto 0;
+}
+
+#intro { animation: fadeUp 0.6s ease; }
+#quiz  { display: none; animation: fadeUp 0.4s ease; }
+#result{ display: none; }
+
+.intro-icon {
+  text-align: center; font-size: 64px;
+  margin-bottom: 20px;
+  animation: floatY 4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(200,160,188,0.4));
+  line-height: 1;
+}
+.intro-catch {
+  text-align: center;
+  font-size: clamp(13px, 3.5vw, 15px);
+  font-weight: 300; color: var(--text-l);
+  line-height: 2; margin-bottom: 32px;
+}
+.intro-catch strong {
+  color: var(--text); font-weight: 500;
+  background: linear-gradient(135deg, var(--pink), var(--lavender));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.songs-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 32px;
+}
+.song-tile {
+  background: white;
+  border: 1px solid rgba(200,180,220,0.25);
+  border-radius: 14px; padding: 11px 14px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 2px 12px rgba(180,160,200,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.song-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(180,160,200,0.15); }
+.song-tile .emoji { font-size: 18px; flex-shrink: 0; }
+.song-tile .name {
+  font-size: 11px; font-weight: 500;
+  color: var(--text); line-height: 1.4;
+}
+
+.btn-start {
+  width: 100%; padding: 18px;
+  background: linear-gradient(135deg, #f0b8ce 0%, #d4a8e8 50%, #a8cce0 100%);
+  border: none; border-radius: 50px;
+  color: white;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer; letter-spacing: 4px;
+  box-shadow: 0 6px 24px rgba(200,150,200,0.35);
+  transition: all 0.25s ease;
+  position: relative; overflow: hidden;
+}
+.btn-start::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 50%);
+  border-radius: 50px;
+}
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(200,150,200,0.45); }
+.btn-start:active { transform: scale(0.98); }
+
+.progress-area { margin-bottom: 28px; }
+.progress-row { display: flex; justify-content: space-between; margin-bottom: 7px; }
+.progress-label { font-size: 11px; color: var(--text-ll); letter-spacing: 2px; font-weight: 300; }
+.progress-pct { font-size: 11px; color: var(--pink); font-weight: 500; letter-spacing: 1px; }
+.progress-track {
+  height: 2px; background: rgba(200,180,220,0.2);
+  border-radius: 10px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--pink), var(--lavender), var(--blue));
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 6px rgba(200,150,200,0.5);
+}
+
+.q-icon {
+  text-align: center; font-size: 44px;
+  margin-bottom: 16px;
+  animation: floatY 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 10px rgba(200,170,210,0.4));
+}
+.q-card {
+  background: white;
+  border: 1px solid rgba(200,180,220,0.3);
+  border-radius: 20px; padding: 22px 24px;
+  margin-bottom: 18px; text-align: center;
+  box-shadow: 0 4px 20px rgba(180,160,200,0.1);
+}
+.q-text {
+  font-size: clamp(15px, 4vw, 17px);
+  font-weight: 500; color: var(--text); line-height: 1.6;
+}
+
+.options { display: flex; flex-direction: column; gap: 9px; }
+.opt-btn {
+  background: white;
+  border: 1px solid rgba(200,180,220,0.3);
+  border-radius: 14px; padding: 15px 18px;
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; font-weight: 400;
+  text-align: left; cursor: pointer;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 2px 10px rgba(180,160,200,0.06);
+  transition: all 0.18s ease; line-height: 1.5;
+}
+.opt-btn:hover {
+  border-color: rgba(220,160,200,0.6);
+  background: linear-gradient(135deg, rgba(248,230,240,0.8), rgba(240,235,250,0.8));
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(200,150,200,0.15);
+}
+.opt-btn.chosen {
+  background: linear-gradient(135deg, rgba(240,184,206,0.3), rgba(212,168,232,0.3));
+  border-color: rgba(220,160,200,0.8);
+}
+.opt-btn:disabled { pointer-events: none; }
+.opt-label {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(240,184,206,0.3), rgba(212,168,232,0.3));
+  border: 1px solid rgba(220,160,200,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; color: var(--pink);
+  flex-shrink: 0;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.result-eyebrow {
+  text-align: center; font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 14px;
+  color: var(--text-ll); letter-spacing: 4px;
+  margin-bottom: 20px;
+}
+.result-card {
+  border-radius: 24px; padding: 32px 24px;
+  margin-bottom: 18px; position: relative;
+  text-align: center;
+  border: 1px solid;
+  overflow: hidden;
+}
+.result-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--card-gradient);
+}
+.result-card::after {
+  content: ''; position: absolute; top: -80px; right: -80px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: var(--card-orb);
+  filter: blur(50px); pointer-events: none;
+}
+.result-emoji {
+  font-size: 64px; margin-bottom: 14px;
+  animation: floatY 3s ease-in-out infinite;
+  display: block; line-height: 1;
+  position: relative; z-index: 1;
+}
+.result-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 400;
+  color: var(--text); margin-bottom: 12px;
+  letter-spacing: 2px; position: relative; z-index: 1;
+}
+.result-desc {
+  color: var(--text-l); font-size: 13px;
+  font-weight: 300; line-height: 1.95;
+  margin-bottom: 16px; position: relative; z-index: 1;
+}
+.result-tags {
+  display: flex; gap: 7px; justify-content: center;
+  flex-wrap: wrap; position: relative; z-index: 1;
+}
+.result-tag {
+  border-radius: 50px; padding: 4px 12px;
+  font-size: 11px; font-weight: 400; letter-spacing: 1px;
+  border: 1px solid; color: var(--text-l);
+}
+
+.yt-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, #ff4444 0%, #cc2222 100%);
+  border-radius: 50px; text-decoration: none; color: white;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 14px; font-weight: 500;
+  box-shadow: 0 8px 24px rgba(200,50,50,0.3);
+  margin-bottom: 14px; letter-spacing: 2px;
+  transition: all 0.22s ease; position: relative; overflow: hidden;
+}
+.yt-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+.all-songs {
+  background: white;
+  border: 1px solid rgba(200,180,220,0.25);
+  border-radius: 20px; padding: 18px 18px; margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(180,160,200,0.08);
+}
+.all-songs-header {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 12px;
+  letter-spacing: 3px; color: var(--text-ll);
+  text-align: center; margin-bottom: 14px;
+}
+.song-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 10px; border-radius: 12px; text-decoration: none;
+  border: 1px solid transparent; transition: all 0.15s ease; margin-bottom: 3px;
+}
+.song-row:hover { background: rgba(240,225,245,0.5); }
+.song-row-emoji { font-size: 16px; }
+.song-row-name {
+  font-size: 12px; font-weight: 300;
+  color: var(--text-ll); flex: 1;
+}
+.song-row.active .song-row-name { font-weight: 500; }
+.song-row-pick {
+  font-size: 9px; font-weight: 400; letter-spacing: 1px;
+  padding: 2px 8px; border-radius: 50px; border: 1px solid;
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+}
+
+.btn-retry {
+  width: 100%; padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(200,180,220,0.4); border-radius: 50px;
+  color: var(--text-ll);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; font-weight: 300; cursor: pointer; letter-spacing: 2px;
+  transition: all 0.2s;
+}
+.btn-retry:hover {
+  background: rgba(240,225,245,0.4);
+  border-color: rgba(220,160,200,0.6);
+  color: var(--text-l);
+}
+
+@keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes popIn { 0%{opacity:0;transform:scale(0.9)} 60%{transform:scale(1.02)} 100%{opacity:1;transform:scale(1)} }
+@keyframes drift1 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-20px) scale(1.05)} 66%{transform:translate(-20px,30px) scale(0.95)} }
+@keyframes drift2 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-40px,20px) scale(0.95)} 66%{transform:translate(20px,-30px) scale(1.05)} }
+@keyframes drift3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(25px,-25px) scale(1.08)} }
+@keyframes featherFloat { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-18px) rotate(5deg)} }
+@keyframes sparkleAnim { 0%,100%{opacity:0;transform:scale(0.5)} 50%{opacity:1;transform:scale(1)} }
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+</div>
+
+<div class="feather" style="top:8%;left:5%">🪶</div>
+<div class="feather" style="top:35%;right:5%">🪶</div>
+<div class="feather" style="bottom:28%;left:7%">🪶</div>
+<div class="feather" style="top:65%;right:8%">🪶</div>
+
+<div class="sparkle-field" id="sparkleField"></div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-group">LilyS/ash</div>
+    <div class="header-logo">楽曲診断</div>
+    <div class="header-sub-ja">FIRST PLAYLIST</div>
+    <div class="header-divider"></div>
+  </div>
+
+  <div id="intro">
+    <div class="intro-icon">🎵</div>
+    <p class="intro-catch">
+      4つの質問に答えて<br>
+      <strong>あなたにぴったりの1曲</strong>を見つけよう
+    </p>
+    <div class="songs-grid" id="songGrid"></div>
+    <button class="btn-start" onclick="startQuiz()">診断スタート</button>
+  </div>
+
+  <div id="quiz">
+    <div class="progress-area">
+      <div class="progress-row">
+        <span class="progress-label" id="qNum">Q 01 / 04</span>
+        <span class="progress-pct" id="qPct">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="q-icon" id="qIcon">🌸</div>
+    <div class="q-card"><p class="q-text" id="qText"></p></div>
+    <div class="options" id="options"></div>
+  </div>
+
+  <div id="result">
+    <div class="result-eyebrow">Your song is...</div>
+    <div class="result-card" id="resultCard">
+      <span class="result-emoji" id="resultEmoji"></span>
+      <div class="result-title" id="resultTitle"></div>
+      <p class="result-desc" id="resultDesc"></p>
+      <div class="result-tags" id="resultTags"></div>
+    </div>
+    <a href="#" target="_blank" id="ytBtn" class="yt-btn">
+      <svg width="20" height="14" viewBox="0 0 22 16" fill="white">
+        <path d="M21.54 2.5A2.77 2.77 0 0 0 19.6.5C17.9 0 11 0 11 0S4.1 0 2.4.5A2.77 2.77 0 0 0 .46 2.5 29 29 0 0 0 0 8a29 29 0 0 0 .46 5.5A2.77 2.77 0 0 0 2.4 15.5C4.1 16 11 16 11 16s6.9 0 8.6-.5a2.77 2.77 0 0 0 1.94-2C22 12.19 22 8 22 8a29 29 0 0 0-.46-5.5z"/>
+        <polygon points="8.75,11.5 14.5,8 8.75,4.5" fill="#FF0000"/>
+      </svg>
+      YouTubeで聴く
+    </a>
+    <div class="all-songs">
+      <div class="all-songs-header">— First Playlist —</div>
+      <div id="allSongsList"></div>
+    </div>
+    <button class="btn-retry" onclick="restart()">もう一度診断する</button>
+  </div>
+</div>
+
+<script>
+const songs = [
+  { id:1, title:"プレイリスト", emoji:"🎵", color:"#e8a8bc", colorL:"#fce8f0", gradient:"linear-gradient(135deg,#f4c0d0,#e8b8d8)", url:"https://www.youtube.com/watch?v=sR3L4IQ3PVI", desc:"毎日に音楽が溶け込んでいるあなた。日常そのものがプレイリスト。感性が豊かで、ふとした瞬間に音楽を探してしまうタイプ。", tags:["日常系","感性豊か","音楽中毒"] },
+  { id:2, title:"アイドルになりたい", emoji:"⭐", color:"#d4a860", colorL:"#fff4d8", gradient:"linear-gradient(135deg,#f8d880,#f0c060)", url:"https://www.youtube.com/watch?v=ULr8sLZB9sA", desc:"輝くことへの憧れが止まらない！夢を追いかける姿勢と、なりたい自分への強い意志を持っているあなたへ。", tags:["夢追い人","キラキラ","上昇志向"] },
+  { id:3, title:"純情コンチェルト", emoji:"🎻", color:"#b4a0d4", colorL:"#f0ecf8", gradient:"linear-gradient(135deg,#d4c4ec,#c4b0e0)", url:"https://www.youtube.com/watch?v=Rw7H17Id7KM", desc:"純粋で一途な恋心の持ち主。感情が豊かで好きな気持ちに真剣。繊細な美しさを持つあなたに。", tags:["一途","純情","繊細"] },
+  { id:4, title:"雨にも風にも", emoji:"🌧️", color:"#7ab8d8", colorL:"#e0f2fc", gradient:"linear-gradient(135deg,#a8d8f0,#88c0e4)", url:"https://www.youtube.com/watch?v=nXcv4BQS95s", desc:"どんな逆境にも折れない強さを持っている。感情の深さと、静かな芯の強さが魅力のあなたへ。", tags:["芯が強い","感情豊か","不屈"] },
+  { id:5, title:"今日も君が好きすぎる", emoji:"💕", color:"#e898b0", colorL:"#fce4ec", gradient:"linear-gradient(135deg,#faa8c0,#f080a0)", url:"https://www.youtube.com/watch?v=Sju5BM0Wxzk", desc:"とにかく愛が溢れてる！好きな気持ちを真っ直ぐ伝えられる正直さと、毎日ときめいている恋愛体質なあなたへ。", tags:["ときめき","まっすぐ","愛が重い"] },
+  { id:6, title:"僕を追いかけて", emoji:"🏃", color:"#d48870", colorL:"#fce8e0", gradient:"linear-gradient(135deg,#f0b898,#e09078)", url:"https://www.youtube.com/watch?v=gh4aiYeyi-g", desc:"情熱的でエネルギッシュ！気持ちを行動で示すあなたにぴったり。追いかけることも追いかけられることも全力。", tags:["情熱的","行動派","全力"] },
+  { id:7, title:"僕には音楽しかない", emoji:"🎧", color:"#70c4b8", colorL:"#dff4f0", gradient:"linear-gradient(135deg,#98dcd4,#70c0b4)", url:"https://www.youtube.com/watch?v=V26vQdROmzQ", desc:"音楽が人生そのもの。言葉よりも音楽で繋がれると信じている、真剣に音楽と向き合っているあなたへ。", tags:["音楽命","ストイック","本物志向"] },
+  { id:8, title:"今が1番楽しい説。", emoji:"🎉", color:"#d4b840", colorL:"#fff8d8", gradient:"linear-gradient(135deg,#f8e060,#e8c840)", url:"https://www.youtube.com/watch?v=b6FSzYenGNE", desc:"今この瞬間を全力で楽しむ天才！毎日がハイライトな生き方をしていて、周りを笑顔にするエネルギーの持ち主。", tags:["今が最高","エネルギッシュ","陽キャ"] },
+];
+
+const questions = [
+  { q:"今の気分に一番近いのは？", icon:"🌸", options:[
+    { text:"恋してる気持ちがずっと続いてる", scores:[1,0,3,0,3,1,0,1] },
+    { text:"夢に向かって走ってる感じ", scores:[0,3,0,1,0,3,0,2] },
+    { text:"音楽にどっぷり浸かりたい", scores:[3,0,0,0,0,0,3,0] },
+    { text:"毎日が楽しくて仕方ない", scores:[1,2,0,0,1,2,0,3] },
+  ]},
+  { q:"好きな人ができたら…", icon:"💭", options:[
+    { text:"全力で追いかける！気持ちは行動で", scores:[0,0,0,0,1,3,0,2] },
+    { text:"毎日好きすぎて気持ちが溢れる", scores:[1,0,2,0,3,0,0,1] },
+    { text:"音楽や歌で気持ちを伝えたい", scores:[2,0,2,0,0,0,3,0] },
+    { text:"ずっと純粋に想い続ける", scores:[0,1,3,1,2,0,0,0] },
+  ]},
+  { q:"自分の「強み」といえば？", icon:"✨", options:[
+    { text:"何があっても折れない強さ", scores:[0,1,0,3,0,2,0,2] },
+    { text:"愛の深さと一途さ", scores:[0,0,3,0,3,0,0,0] },
+    { text:"今を楽しむ力・明るさ", scores:[2,2,0,0,0,0,0,3] },
+    { text:"音楽・アートへの情熱", scores:[3,0,0,0,0,0,3,0] },
+  ]},
+  { q:"理想の休日といえば？", icon:"🌷", options:[
+    { text:"ライブ・イベントで全力盛り上がる", scores:[0,2,0,0,0,2,0,3] },
+    { text:"ひたすら好きな音楽を聴き続ける", scores:[3,0,0,0,0,0,3,0] },
+    { text:"大切な人と静かな時間を過ごす", scores:[1,0,3,2,2,0,0,0] },
+    { text:"夢に向かって練習・努力する", scores:[0,3,0,1,0,2,1,0] },
+  ]},
+];
+
+const sf = document.getElementById('sparkleField');
+for (let i = 0; i < 18; i++) {
+  const s = document.createElement('div');
+  s.className = 'sp';
+  const size = 2 + Math.random() * 3;
+  s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${2.5+Math.random()*4}s;animation-delay:${-Math.random()*5}s;`;
+  sf.appendChild(s);
+}
+
+const grid = document.getElementById('songGrid');
+songs.forEach(s => {
+  const d = document.createElement('div');
+  d.className = 'song-tile';
+  d.style.borderColor = s.color + '40';
+  d.innerHTML = `<span class="emoji">${s.emoji}</span><span class="name">${s.title}</span>`;
+  grid.appendChild(d);
+});
+
+let current = 0, scores = new Array(8).fill(0), answering = false;
+
+function rgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function show(id) {
+  ['intro','quiz','result'].forEach(x => document.getElementById(x).style.display = x===id?'block':'none');
+}
+
+function startQuiz() {
+  current = 0; scores = new Array(8).fill(0);
+  renderQ(); show('quiz');
+}
+function renderQ() {
+  const q = questions[current];
+  const n = String(current+1).padStart(2,'0');
+  document.getElementById('qNum').textContent = `Q ${n} / 04`;
+  const pct = Math.round((current/questions.length)*100);
+  document.getElementById('qPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('qIcon').textContent = q.icon;
+  document.getElementById('qText').textContent = q.q;
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.options.forEach((o, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-label">${['A','B','C','D'][i]}</span><span>${o.text}</span>`;
+    btn.onclick = () => pick(o.scores, btn);
+    opts.appendChild(btn);
+  });
+  answering = false;
+}
+function pick(optScores, btn) {
+  if (answering) return;
+  answering = true;
+  btn.classList.add('chosen');
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  scores = scores.map((s,i) => s + optScores[i]);
+  setTimeout(() => {
+    if (current < questions.length-1) { current++; renderQ(); }
+    else showResult(songs[scores.indexOf(Math.max(...scores))]);
+  }, 380);
+}
+
+function showResult(song) {
+  const card = document.getElementById('resultCard');
+  card.style.background = song.colorL;
+  card.style.borderColor = song.color + '50';
+  card.style.boxShadow = `0 8px 40px ${rgba(song.color, 0.2)}`;
+  card.style.setProperty('--card-gradient', song.gradient);
+  card.style.setProperty('--card-orb', rgba(song.color, 0.25));
+  document.getElementById('resultEmoji').textContent = song.emoji;
+  document.getElementById('resultEmoji').style.filter = `drop-shadow(0 4px 14px ${rgba(song.color, 0.5)})`;
+  document.getElementById('resultTitle').textContent = song.title;
+  document.getElementById('resultDesc').textContent = song.desc;
+  const tags = document.getElementById('resultTags');
+  tags.innerHTML = '';
+  song.tags.forEach(t => {
+    const sp = document.createElement('span');
+    sp.className = 'result-tag';
+    sp.textContent = t;
+    sp.style.background = rgba(song.color, 0.1);
+    sp.style.borderColor = rgba(song.color, 0.35);
+    sp.style.color = song.color;
+    tags.appendChild(sp);
+  });
+  document.getElementById('ytBtn').href = song.url;
+  const list = document.getElementById('allSongsList');
+  list.innerHTML = '';
+  songs.forEach(s => {
+    const a = document.createElement('a');
+    a.href = s.url; a.target = '_blank';
+    a.className = 'song-row' + (s.id===song.id?' active':'');
+    if (s.id===song.id) { a.style.background = rgba(song.color, 0.1); a.style.borderColor = rgba(song.color, 0.35); }
+    a.innerHTML = `<span class="song-row-emoji">${s.emoji}</span><span class="song-row-name" style="color:${s.id===song.id?song.color:'var(--text-ll)'}">${s.title}</span>${s.id===song.id?`<span class="song-row-pick" style="color:${song.color};border-color:${rgba(song.color,.35)};background:${rgba(song.color,.08)}">your pick</span>`:''}<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H4M10 2V8" stroke="${s.id===song.id?song.color:'rgba(180,160,200,0.4)'}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+    list.appendChild(a);
+  });
+  const el = document.getElementById('result');
+  el.style.animation = 'popIn 0.55s ease';
+  show('result');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function restart() { show('intro'); }
+show('intro');
+</script>
+</body>
+</html>
+
